@@ -1,0 +1,226 @@
+// CUshop 数据库模型 —— 对应原微信云开发 12 个集合
+// 设计：纯标量字段（无 Prisma relation），跨表关联用裸字符串 ID 手工 join，
+// 照搬原云函数的查询逻辑，避免迁移复杂度和级联删除坑。
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===== 用户 =====
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique @map("username")
+  passwordHash  String   @map("password_hash")
+  nickname      String   @default("新朋友")
+  avatar        String   @default("")
+  wechat        String   @default("")
+  region        String   @default("")
+  role          String   @default("user") // user | admin
+  status        String   @default("normal") // normal | banned
+  createTime    DateTime @default(now()) @map("create_time")
+  lastLoginTime DateTime @default(now()) @map("last_login_time")
+
+  @@map("users")
+}
+
+// ===== 商品 =====
+model Goods {
+  id            String   @id @default(cuid())
+  sellerId      String   @map("seller_id")
+  sellerName    String   @default("") @map("seller_name")
+  sellerAvatar  String   @default("") @map("seller_avatar")
+  sellerWechat  String   @default("") @map("seller_wechat")
+  title         String
+  price         Float
+  desc          String   @default("")
+  images        String[] @default([])
+  tags          String[] @default([])
+  tradeType     String   @default("pickup") @map("trade_type") // pickup | express | meet
+  status        String   @default("on") // on | sold | off | removed
+  views         Int      @default(0)
+  commentCount  Int      @default(0) @map("comment_count")
+  favCount      Int      @default(0) @map("fav_count")
+  createTime    DateTime @default(now()) @map("create_time")
+  updateTime    DateTime @updatedAt @map("update_time")
+
+  @@map("goods")
+}
+
+// ===== 留言 =====
+model Comment {
+  id          String   @id @default(cuid())
+  goodsId     String   @map("goods_id")
+  goodsTitle  String   @default("") @map("goods_title")
+  sellerId    String   @map("seller_id")
+  userId      String   @map("user_id")
+  userName    String   @default("") @map("user_name")
+  userAvatar  String   @default("") @map("user_avatar")
+  content     String
+  parentId    String?  @map("parent_id")
+  status      String   @default("normal") // normal | deleted
+  createTime  DateTime @default(now()) @map("create_time")
+  ts          BigInt   @default(0) // epoch ms，防刷
+
+  @@map("comments")
+}
+
+// ===== 收藏 =====
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  goodsId    String   @map("goods_id")
+  createTime DateTime @default(now()) @map("create_time")
+
+  @@unique([userId, goodsId])
+  @@map("favorites")
+}
+
+// ===== 会话 =====
+model Conversation {
+  id           String   @id @default(cuid())
+  goodsId      String   @map("goods_id")
+  goodsTitle   String   @default("") @map("goods_title")
+  goodsImage   String   @default("") @map("goods_image")
+  buyerId      String   @map("buyer_id")
+  sellerId     String   @map("seller_id")
+  buyerName    String   @default("") @map("buyer_name")
+  buyerAvatar  String   @default("") @map("buyer_avatar")
+  sellerName   String   @default("") @map("seller_name")
+  sellerAvatar String   @default("") @map("seller_avatar")
+  lastMsg      String   @default("") @map("last_msg")
+  lastMsgTime  DateTime @default(now()) @map("last_msg_time")
+  unreadBuyer  Int      @default(0) @map("unread_buyer")
+  unreadSeller Int      @default(0) @map("unread_seller")
+  createTime   DateTime @default(now()) @map("create_time")
+
+  @@unique([goodsId, buyerId])
+  @@map("conversations")
+}
+
+// ===== 消息 =====
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String   @map("conversation_id")
+  goodsId        String?  @map("goods_id")
+  fromId         String   @map("from_id")
+  toId           String   @map("to_id")
+  type           String   @default("text") // text | image | lock | deal
+  content        String   @default("")
+  status         String   @default("") // "" | pending | confirmed | cancelled | done
+  // deal 类型消息的附加字段
+  dealId         String?  @map("deal_id")
+  goodsTitle     String?  @map("goods_title")
+  goodsImage     String?  @map("goods_image")
+  price          Float?   @map("price")
+  buyerName      String?  @map("buyer_name")
+  sellerName     String?  @map("seller_name")
+  createTime     DateTime @default(now()) @map("create_time")
+
+  @@map("messages")
+}
+
+// ===== 成交回执 =====
+model Deal {
+  id              String   @id @default(cuid())
+  goodsId         String   @map("goods_id")
+  goodsTitle      String   @default("") @map("goods_title")
+  goodsImage      String   @default("") @map("goods_image")
+  price           Float    @default(0)
+  buyerId         String   @map("buyer_id")
+  buyerName       String   @default("") @map("buyer_name")
+  sellerId        String   @map("seller_id")
+  sellerName      String   @default("") @map("seller_name")
+  sourceMessageId String   @unique @map("source_message_id")
+  status          String   @default("done")
+  createTime      DateTime @default(now()) @map("create_time")
+
+  @@map("deals")
+}
+
+// ===== 互评 =====
+model Review {
+  id         String   @id @default(cuid())
+  dealId     String   @map("deal_id")
+  goodsId    String   @map("goods_id")
+  goodsTitle String   @default("") @map("goods_title")
+  fromId     String   @map("from_id")
+  fromName   String   @default("") @map("from_name")
+  toId       String   @map("to_id")
+  grade      String   // good | normal | bad
+  text       String   @default("")
+  status     String   @default("normal") // normal | deleted
+  createTime DateTime @default(now()) @map("create_time")
+
+  @@unique([dealId, fromId])
+  @@map("reviews")
+}
+
+// ===== 举报 =====
+model Report {
+  id         String    @id @default(cuid())
+  targetType String    @map("target_type") // goods | comment | post | postReply | conversation | user
+  targetId   String    @map("target_id")
+  reason     String    @default("")
+  desc       String    @default("")
+  reporterId String    @map("reporter_id")
+  status     String    @default("pending") // pending | done | ignored
+  handle     String    @default("")
+  handleTime DateTime? @map("handle_time")
+  createTime DateTime  @default(now()) @map("create_time")
+  createTs   BigInt    @default(0) @map("create_ts") // epoch ms，24h 幂等
+
+  @@map("reports")
+}
+
+// ===== 社群帖子 =====
+model Post {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  userName    String   @default("") @map("user_name")
+  userAvatar  String   @default("") @map("user_avatar")
+  title       String
+  content     String   @default("")
+  images      String[] @default([])
+  tags        String[] @default([])
+  likeCount   Int      @default(0) @map("like_count")
+  replyCount  Int      @default(0) @map("reply_count")
+  status      String   @default("normal") // normal | deleted
+  createTime  DateTime @default(now()) @map("create_time")
+  ts          BigInt   @default(0) // epoch ms
+
+  @@map("posts")
+}
+
+// ===== 帖子回复 =====
+model PostReply {
+  id         String   @id @default(cuid())
+  postId     String   @map("post_id")
+  parentId   String?  @map("parent_id")
+  toUserId   String?  @map("to_user_id")
+  toUserName String?  @map("to_user_name")
+  userId     String   @map("user_id")
+  userName   String   @default("") @map("user_name")
+  userAvatar String   @default("") @map("user_avatar")
+  content    String
+  status     String   @default("normal") // normal | deleted
+  createTime DateTime @default(now()) @map("create_time")
+  ts         BigInt   @default(0) // epoch ms，防刷
+
+  @@map("post_replies")
+}
+
+// ===== 帖子点赞 =====
+model PostLike {
+  id     String @id @default(cuid())
+  postId String @map("post_id")
+  userId String @map("user_id")
+  ts     BigInt @default(0)
+
+  @@unique([postId, userId])
+  @@map("post_likes")
+}
