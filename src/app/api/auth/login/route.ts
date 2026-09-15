@@ -5,7 +5,7 @@ import { createSession } from '@/lib/session'
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, password } = await req.json()
+    const { username, password, remember = true } = await req.json()
     const name = (username || '').trim()
     const pw = password || ''
 
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     await prisma.user.update({ where: { id: user.id }, data: { lastLoginTime: new Date() } })
-    await createSession(user.id)
+    await createSession(user.id, remember)
     const { passwordHash: _drop, ...safe } = user
     return Response.json({ code: 0, data: safe })
   } catch (e: any) {

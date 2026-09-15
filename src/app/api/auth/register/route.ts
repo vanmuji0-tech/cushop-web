@@ -5,7 +5,7 @@ import { createSession } from '@/lib/session'
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, password, nickname } = await req.json()
+    const { username, password, nickname, remember = true } = await req.json()
     const name = (username || '').trim()
     const pw = password || ''
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    await createSession(user.id)
+    await createSession(user.id, remember)
     const { passwordHash: _drop, ...safe } = user
     return Response.json({ code: 0, data: safe })
   } catch (e: any) {

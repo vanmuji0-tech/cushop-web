@@ -6,16 +6,24 @@ import { prisma } from './prisma'
 const SESSION_COOKIE = 'session'
 
 // 登录/注册成功后写 cookie
-export async function createSession(userId: string) {
+// remember=true：30 天免登录；remember=false：浏览器会话 cookie（关浏览器即退出）
+export async function createSession(userId: string, remember = true) {
   const token = await encryptSession({ userId })
   const store = await cookies()
-  store.set(SESSION_COOKIE, token, {
+  const opts: {
+    httpOnly: boolean
+    secure: boolean
+    sameSite: 'lax'
+    path: string
+    maxAge?: number
+  } = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 7,
-  })
+  }
+  if (remember) opts.maxAge = 60 * 60 * 24 * 30
+  store.set(SESSION_COOKIE, token, opts)
 }
 
 export async function deleteSession() {
