@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { callCloud, getMe } from '@/lib/api'
 import { showToast } from '@/lib/ui'
+import { uploadImage } from '@/lib/upload'
 
-// 发布商品：选图（本地上传 → Cloudinary）→ goods.create（照搬 pages/goods/publish）
+// 发布商品：选图（本机压缩 → Cloudinary）→ goods.create（照搬 pages/goods/publish）
 export default function PublishPage() {
   const router = useRouter()
   const [me, setMe] = useState<any>(null)
@@ -16,6 +17,7 @@ export default function PublishPage() {
   const [tradeType, setTradeType] = useState('pickup')
   const [images, setImages] = useState<{ file: File; preview: string }[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [phase, setPhase] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -42,15 +44,6 @@ export default function PublishPage() {
     })
   }
 
-  async function uploadImage(file: File): Promise<string> {
-    const fd = new FormData()
-    fd.append('file', file)
-    const res = await fetch('/api/upload', { method: 'POST', body: fd })
-    const result = await res.json()
-    if (result?.code !== 0) throw new Error(result?.msg || '上传失败')
-    return result.data.url
-  }
-
   async function onSubmit() {
     if (submitting) return
     if (!title.trim()) return showToast('请填写标题')
@@ -59,9 +52,11 @@ export default function PublishPage() {
     setSubmitting(true)
     try {
       const urls: string[] = []
-      for (const img of images) {
-        urls.push(await uploadImage(img.file))
+      for (let i = 0; i < images.length; i++) {
+        setPhase(`上传图片 ${i + 1}/${images.length}…`)
+        urls.push(await uploadImage(images[i].file, 'cushop/goods'))
       }
+      setPhase('发布中…')
       const tagList = tags
         .split(/[,，]/)
         .map((s) => s.trim())
@@ -81,10 +76,12 @@ export default function PublishPage() {
       showToast('发布成功')
       images.forEach((img) => URL.revokeObjectURL(img.preview))
       router.push('/')
-    } catch (e) {
+    } catch (e: any) {
       console.error('[publish] 发布失败', e)
+      showToast(e?.message || '发布失败，请重试')
     } finally {
       setSubmitting(false)
+      setPhase('')
     }
   }
 
@@ -160,7 +157,7 @@ export default function PublishPage() {
 
         {/* 提交 */}
         <button className="submit-btn nm-btn-primary" disabled={submitting} onClick={onSubmit}>
-          {submitting ? '发布中…' : '发布'}
+          {submitting ? phase || '发布中…' : '发布'}
         </button>
       </div>
     </div>

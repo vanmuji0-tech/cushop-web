@@ -6,6 +6,10 @@ import { v2 as cloudinary } from 'cloudinary'
 // 图片上传：等价小程序 wx.cloud.uploadFile（客户端 → 云存储 → fileID），
 // Web 版直接传 Cloudinary，返回 https 地址存库。fileID 中间层整个消失。
 
+// Vercel 函数默认 10s 就掐断，返回的是平台的 HTML 报错页而不是 {code,msg} 信封，
+// 前端 res.json() 会解析失败——表现为「转一会儿然后没反应」。给云存储转发留够时间。
+export const maxDuration = 60
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,

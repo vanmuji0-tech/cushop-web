@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getMe, callCloud } from '@/lib/api'
 import { showToast } from '@/lib/ui'
+import { uploadImage } from '@/lib/upload'
 import { Avatar } from '@/components/GoodsCard'
 
 // 个人资料：编辑昵称 / 头像 / 微信号 / 地区（照搬 pages/mine/profile）
@@ -32,15 +33,11 @@ export default function ProfilePage() {
     if (!f) return
     setUploading(true)
     try {
-      const fd = new FormData()
-      fd.append('file', f)
-      const res = await fetch('/api/upload', { method: 'POST', body: fd })
-      const r = await res.json()
-      if (r?.code !== 0) throw new Error(r?.msg || '上传失败')
-      setAvatar(r.data.url)
+      setAvatar(await uploadImage(f, 'cushop/avatar'))
       showToast('头像已更新')
-    } catch (err) {
+    } catch (err: any) {
       console.error('[profile] 头像上传失败', err)
+      showToast(err?.message || '头像上传失败，请重试')
     } finally {
       setUploading(false)
       e.target.value = ''

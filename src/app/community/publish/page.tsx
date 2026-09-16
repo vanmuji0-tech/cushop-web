@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { callCloud, getMe } from '@/lib/api'
 import { showToast } from '@/lib/ui'
+import { uploadImage } from '@/lib/upload'
 import { HOT_TAGS } from '@/lib/topics'
 
 // 发帖（照搬 pages/community/publish）
@@ -15,6 +16,7 @@ export default function CommunityPublishPage() {
   const [tags, setTags] = useState<string[]>([])
   const [images, setImages] = useState<{ file: File; preview: string }[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [phase, setPhase] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -48,15 +50,6 @@ export default function CommunityPublishPage() {
     })
   }
 
-  async function uploadImage(file: File): Promise<string> {
-    const fd = new FormData()
-    fd.append('file', file)
-    const res = await fetch('/api/upload', { method: 'POST', body: fd })
-    const r = await res.json()
-    if (r?.code !== 0) throw new Error(r?.msg || '上传失败')
-    return r.data.url
-  }
-
   async function onSubmit() {
     if (submitting) return
     if (!title.trim()) return showToast('请填写标题')
@@ -65,17 +58,21 @@ export default function CommunityPublishPage() {
     setSubmitting(true)
     try {
       const urls: string[] = []
-      for (const img of images) {
-        urls.push(await uploadImage(img.file))
+      for (let i = 0; i < images.length; i++) {
+        setPhase(`上传图片 ${i + 1}/${images.length}…`)
+        urls.push(await uploadImage(images[i].file, 'cushop/community'))
       }
+      setPhase('发布中…')
       await callCloud('post', { action: 'create', title: title.trim(), content: content.trim(), images: urls, tags })
       showToast('发布成功')
       images.forEach((img) => URL.revokeObjectURL(img.preview))
       router.push('/community')
-    } catch (e) {
+    } catch (e: any) {
       console.error('[community-publish] 发布失败', e)
+      showToast(e?.message || '发布失败，请重试')
     } finally {
       setSubmitting(false)
+      setPhase('')
     }
   }
 
@@ -139,7 +136,7 @@ export default function CommunityPublishPage() {
 
         {/* 提交 */}
         <button className="submit-btn nm-btn-primary" disabled={submitting} onClick={onSubmit}>
-          {submitting ? '发布中…' : '发布'}
+          {submitting ? phase || '发布中…' : '发布'}
         </button>
       </div>
     </div>

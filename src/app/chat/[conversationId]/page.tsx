@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { callCloud, getMe } from '@/lib/api'
 import { formatPrice, showToast, copyText } from '@/lib/ui'
+import { uploadImage } from '@/lib/upload'
 import { Avatar } from '@/components/GoodsCard'
 
 const pad2 = (n: number) => (n < 10 ? '0' + n : '' + n)
@@ -144,15 +145,12 @@ function ChatInner() {
     if (sendingImg) return
     setSendingImg(true)
     try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const upRes = await fetch('/api/upload', { method: 'POST', body: fd })
-      const up = await upRes.json()
-      if (up?.code !== 0) throw new Error(up?.msg || '上传失败')
-      await callCloud('message', { action: 'send', conversationId, toId, type: 'image', content: up.data.url })
+      const url = await uploadImage(file, 'cushop/chat')
+      await callCloud('message', { action: 'send', conversationId, toId, type: 'image', content: url })
       loadMessages()
-    } catch (e) {
+    } catch (e: any) {
       console.error('[chat] 发图失败', e)
+      showToast(e?.message || '图片发送失败，请重试')
     } finally {
       setSendingImg(false)
     }
