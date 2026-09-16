@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CUshop 上线公告</title>
+<style>
+  /* ── 设计令牌 ───────────────────────────────────────────────
+     纸白 / 橙 来自站点本身（app.wxss 全局 token），不改。
+     其余三个色是文档为印刷补充的：ink 用来写字，muted 写次要的字，
+     rule 画分隔线。全站扁平 → 圆角一律为 0，全篇只有打孔是圆的。 */
+  :root{
+    --paper:#faf6ee;
+    --orange:#f08300;
+    --ink:#241f18;
+    --muted:#7d7469;
+    --rule:#e4dccd;
+
+    --sans:"Microsoft YaHei","PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+    --display:"SimHei","Heiti SC","PingFang SC","Microsoft YaHei",sans-serif;
+    --hand:"KaiTi","STKaiti","Kaiti SC","楷体",serif;
+    --mono:"SF Mono","Consolas","Roboto Mono","Courier New",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:#e7e2d8;
+    font-family:var(--sans);
+    color:var(--ink);
+    font-size:10pt;
+    line-height:1.7;
+  }
+
+  /* ── 屏幕上的工具条（打印时消失） ───────────────────────── */
+  .bar{
+    position:sticky;top:0;z-index:10;
+    display:flex;flex-wrap:wrap;align-items:center;gap:14px;
+    padding:12px 20px;
+    background:var(--ink);
+    color:#f4efe6;
+    font-size:12px;
+  }
+  .bar button{
+    font:inherit;font-weight:700;
+    padding:8px 18px;border:0;border-radius:0;
+    background:var(--orange);color:var(--ink);
+    cursor:pointer;
+  }
+  .bar button:hover{background:#ffa22e}
+  .bar button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .bar span{opacity:.85;line-height:1.5}
+
+  main{padding:26px 12px 60px;display:flex;flex-direction:column;align-items:center;gap:26px}
+
+  /* ── 纸 ────────────────────────────────────────────────── */
+  .sheet{
+    width:210mm;min-height:297mm;
+    padding:15mm 17mm;
+    background:var(--paper);
+    box-shadow:0 2px 22px rgba(60,48,30,.18);
+    display:flex;flex-direction:column;
+  }
+
+  /* ── 报头 ───────────────────────────────────────────────── */
+  .eyebrow{
+    margin:0 0 14pt;
+    font-family:var(--mono);font-size:8pt;letter-spacing:.16em;
+    color:var(--orange);text-transform:uppercase;
+  }
+  h1{
+    margin:0 0 14pt;
+    font-family:var(--display);font-weight:400;
+    font-size:33pt;line-height:1.16;letter-spacing:.01em;
+  }
+  .lede{
+    margin:0;max-width:38em;
+    font-size:11.5pt;line-height:1.75;color:#3d362c;
+  }
+
+  /* ── 签名元素：价签 ───────────────────────────────────────
+     二手货架的世界里，每件东西都挂着一张手写价签。整篇只在这里
+     用力：橙底、黑字、右上切角、左边一个打孔，斜着贴上去。 */
+  .tag{
+    position:relative;
+    margin:24pt 0 0;
+    padding:15pt 22pt 15pt 40pt;
+    background:var(--orange);
+    color:var(--ink);
+    transform:rotate(-1.1deg);
+    clip-path:polygon(0 0,100% 0,calc(100% - 20pt) 50%,100% 100%,0 100%);
+  }
+  .tag::before{
+    content:"";
+    position:absolute;left:13pt;top:50%;
+    width:11pt;height:11pt;margin-top:-5.5pt;
+    border-radius:50%;
+    background:var(--paper);
+    box-shadow:inset 0 0 0 1pt rgba(36,31,24,.28);
+  }
+  .tag-note{
+    margin:0;font-family:var(--hand);font-size:12pt;letter-spacing:.04em;
+  }
+  .tag-url{
+    margin:2pt 0 3pt;
+    font-family:var(--mono);font-size:24pt;font-weight:700;
+    letter-spacing:-.015em;line-height:1.15;
+    word-break:break-all;
+  }
+  .tag-sub{margin:0;font-size:8.5pt;opacity:.82}
+
+  /* ── 栏目 ───────────────────────────────────────────────── */
+  h2{
+    margin:0 0 12pt;
+    padding-bottom:6pt;
+    border-bottom:2px solid var(--ink);
+    font-family:var(--display);font-weight:400;
+    font-size:14pt;line-height:1.3;letter-spacing:.02em;
+  }
+  .block{margin-top:28pt}
+
+  /* ── 能做什么：两列，横线连成一张表 ─────────────────────── */
+  .grid{
+    margin:0;padding:0;list-style:none;
+    display:grid;grid-template-columns:1fr 1fr;column-gap:0;row-gap:0;
+  }
+  .grid li{
+    padding:9pt 0;
+    border-top:1px solid var(--rule);
+    font-size:9.5pt;line-height:1.62;color:var(--muted);
+  }
+  .grid li:nth-child(odd){padding-right:18pt}
+  .grid li:nth-child(even){padding-left:18pt}
+  .grid li:nth-child(-n+2){border-top:0;padding-top:0}
+  .grid b{
+    display:block;
+    font-family:var(--display);font-weight:400;
+    font-size:11pt;color:var(--ink);
+  }
+  .grid b::before{
+    content:"";display:inline-block;
+    width:5pt;height:5pt;margin-right:7pt;
+    background:var(--orange);vertical-align:2pt;
+  }
+
+  /* ── 步骤 ───────────────────────────────────────────────── */
+  .steps{margin:0;padding:0;list-style:none;counter-reset:s}
+  .steps li{
+    position:relative;
+    padding:0 0 14pt 34pt;
+    counter-increment:s;
+  }
+  .steps li:last-child{padding-bottom:0}
+  .steps li::before{
+    content:counter(s);
+    position:absolute;left:0;top:1pt;
+    width:21pt;height:21pt;
+    border:1px solid var(--orange);color:var(--orange);
+    font-family:var(--mono);font-size:9pt;line-height:21pt;
+    text-align:center;
+  }
+  .steps b{display:block;font-size:11pt;line-height:1.5}
+  .steps p{margin:2pt 0 0;font-size:9.5pt;color:var(--muted);line-height:1.65}
+  .steps code{
+    font-family:var(--mono);font-size:9.5pt;
+    background:rgba(240,131,0,.14);padding:.5pt 3pt;
+  }
+
+  /* ── 成交流程：横向五格，中间两格是本站独有的部分 ───────── */
+  .flow{
+    margin:0;padding:0;list-style:none;
+    display:grid;grid-template-columns:repeat(5,1fr);
+  }
+  .flow li{
+    padding:11pt 8pt 12pt;
+    border:1px solid var(--rule);border-left:0;
+    text-align:center;
+  }
+  .flow li:first-child{border-left:1px solid var(--rule)}
+  .flow li.key{background:var(--orange);border-color:var(--orange);color:var(--ink)}
+  .flow .n{
+    display:block;margin-bottom:5pt;
+    font-family:var(--mono);font-size:8pt;letter-spacing:.1em;
+    color:var(--muted);
+  }
+  .flow li.key .n{color:rgba(36,31,24,.6)}
+  .flow b{display:block;font-family:var(--display);font-weight:400;font-size:10.5pt;line-height:1.35}
+  .flow small{display:block;margin-top:3pt;font-size:8pt;line-height:1.5;color:var(--muted)}
+  .flow li.key small{color:rgba(36,31,24,.75)}
+
+  /* ── 约定 ───────────────────────────────────────────────── */
+  .rules{margin:0;padding:0;list-style:none;font-size:9.5pt;line-height:1.72}
+  .rules li{padding:0 0 9pt 15pt;position:relative;color:var(--muted)}
+  .rules li:last-child{padding-bottom:0}
+  .rules li::before{
+    content:"";position:absolute;left:0;top:7.5pt;
+    width:6pt;height:1px;background:var(--orange);
+  }
+  .rules b{color:var(--ink)}
+
+  /* ── 页脚 ───────────────────────────────────────────────── */
+  .foot{
+    margin-top:auto;padding-top:12pt;
+    border-top:1px solid var(--rule);
+    display:flex;justify-content:space-between;gap:12pt;
+    font-family:var(--mono);font-size:8pt;letter-spacing:.08em;
+    color:var(--muted);
+  }
+
+  /* ── 打印 / 导出 PDF ────────────────────────────────────── */
+  @page{size:A4;margin:0}
+
+  @media print{
+    /* 别让浏览器把橙底和斜线当成"装饰"删掉 */
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+    body{background:#fff}
+    .bar{display:none}
+    main{padding:0;gap:0;display:block}
+
+    .sheet{
+      width:auto;
+      height:296mm;min-height:0;
+      padding:15mm 17mm;
+      box-shadow:none;
+      break-after:page;
+      page-break-after:always;
+    }
+    .sheet:last-of-type{break-after:auto;page-break-after:auto}
+
+    h2,.block,.flow,.grid,.steps,.rules,.tag{break-inside:avoid}
+    h2{break-after:avoid;page-break-after:avoid}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+
+  /* 窄屏别横向滚动 */
+  @media screen and (max-width:820px){
+    .sheet{width:100%;min-height:0;padding:24px 20px}
+    h1{font-size:27pt}
+    .tag-url{font-size:17pt}
+    .grid{grid-template-columns:1fr}
+    .grid li:nth-child(odd){padding-right:0}
+    .grid li:nth-child(even){padding-left:0;border-top:1px solid var(--rule)}
+    .grid li:nth-child(2){border-top:1px solid var(--rule);padding-top:9pt}
+    .flow{grid-template-columns:1fr}
+    .flow li{border-left:1px solid var(--rule);border-top:0}
+    .flow li:first-child{border-top:1px solid var(--rule)}
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <button type="button" onclick="window.print()">打印 / 导出 PDF</button>
+  <span>打印对话框里选：纸张 <b>A4</b> · 边距<b>「无」</b> · 勾上<b>「背景图形」</b>（不勾橙色会印不出来）</span>
+</div>
+
+<main>
+
+  <!-- ═══ 第 1 页 ═══ -->
+  <article class="sheet">
+
+    <p class="eyebrow">CUshop · 社区二手 · 已上线</p>
+
+    <h1>你的闲置，<br>附近有人要</h1>
+
+    <p class="lede">CUshop 是给同一个小区、园区、学校或公司的人用的二手货架。逛和聊在站内，看货和给钱在当面——平台不碰钱，也没有担保交易和快递追踪。</p>
+
+    <div class="tag">
+      <p class="tag-note">打开这个网址</p>
+      <p class="tag-url">cushop-web.vercel.app</p>
+      <p class="tag-sub">手机、平板、电脑都能开 · 不用装 App</p>
+    </div>
+
+    <section class="block">
+      <h2>在上面能做什么</h2>
+      <ul class="grid">
+        <li><b>逛广场</b>双列大图，按最新或价格排，也能搜标题和描述里的词。</li>
+        <li><b>发布闲置</b>最多 9 张图，打标签，选自提 / 快递 / 面交。</li>
+        <li><b>收藏与留言</b>存进收藏夹；留言能一层层回复。</li>
+        <li><b>站内私聊</b>直接聊、直接发图，不用先加微信。</li>
+        <li><b>锁定成交</b>卖家点「锁定商品给买家」，买家点「确认成交」，双方拿到凭证。</li>
+        <li><b>成交后互评</b>给对方一个评价，攒在对方主页上。</li>
+        <li><b>卖家主页</b>点卖家头像进去，看卖出数、加入时长、靠谱数。</li>
+        <li><b>社群</b>发帖、盖楼回复、点赞，按话题翻。</li>
+      </ul>
+    </section>
+
+    <footer class="foot">
+      <span>CUshop · 社区二手买卖回血</span>
+      <span>1 / 2</span>
+    </footer>
+
+  </article>
+
+  <!-- ═══ 第 2 页 ═══ -->
+  <article class="sheet">
+
+    <section>
+      <h2>怎么开始</h2>
+      <ol class="steps">
+        <li>
+          <b>打开 <code>cushop-web.vercel.app</code></b>
+          <p>手机或电脑的浏览器都行，不用下载、不用安装。逛广场和看商品不需要登录。</p>
+        </li>
+        <li>
+          <b>点「注册」，取个用户名和密码</b>
+          <p>密码至少 6 位。昵称可以不填，不填就用用户名。之后在「我的 → 个人资料」里随时能改昵称、头像、微信号和地区。</p>
+        </li>
+        <li>
+          <b>发布你的第一件闲置，或者先逛逛</b>
+          <p>想留言、收藏、私聊、发帖，登录之后才行。</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="block">
+      <h2>一次成交长这样</h2>
+      <ol class="flow">
+        <li>
+          <span class="n">STEP 1</span>
+          <b>逛到</b>
+          <small>广场上看到想要的东西</small>
+        </li>
+        <li>
+          <span class="n">STEP 2</span>
+          <b>私聊</b>
+          <small>问一句「还在吗」</small>
+        </li>
+        <li class="key">
+          <span class="n">STEP 3</span>
+          <b>卖家锁定</b>
+          <small>选定买家，别人就拍不走了</small>
+        </li>
+        <li class="key">
+          <span class="n">STEP 4</span>
+          <b>买家确认</b>
+          <small>点「确认成交」定下来</small>
+        </li>
+        <li>
+          <span class="n">STEP 5</span>
+          <b>拿凭证</b>
+          <small>可复制留档，互相评价</small>
+        </li>
+      </ol>
+    </section>
+
+    <section class="block">
+      <h2>几条约定</h2>
+      <ul class="rules">
+        <li><b>平台不碰钱。</b>没有在线支付、担保交易、退款售后。价格和方式谈好后，当面看货、当面给钱。</li>
+        <li><b>微信号填不填、给不给，你自己定。</b>平台不会替你公开。</li>
+        <li><b>尽量别脱离站内聊天。</b>留一份记录，出问题时有据可查。</li>
+        <li><b>看到不合适的就点举报。</b>管理员会在后台处理；同一条重复举报会被挡下。</li>
+        <li><b>第一个注册的账号自动是管理员。</b>想要后台权限就第一个注册，入口在「我的 → 管理后台」。</li>
+      </ul>
+    </section>
+
+    <footer class="foot">
+      <span>cushop-web.vercel.app</span>
+      <span>2 / 2</span>
+    </footer>
+
+  </article>
+
+</main>
+
+</body>
+</html>
