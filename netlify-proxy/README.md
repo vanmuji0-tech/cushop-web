@@ -48,11 +48,16 @@
 
 1. Vercel → `cushop-web` → **Settings → Environment Variables**
 2. 新增一条：
-   - Name：`PUBLIC_ORIGIN`
+   - Name：**`SITE_ORIGIN`**
    - Value：`https://你的站.netlify.app`（**带 `https://`，结尾不要带斜杠**）
 3. **Deployments → 最新一条 → ⋯ → Redeploy**（环境变量改完必须重新部署）
 
 设好之后，所有跳转都强制用这个域名，跟反代注入什么头都无关。
+
+> **别用 `PUBLIC_` 开头的名字。** Vercel 把 `PUBLIC_` 当作框架公开前缀
+> （SvelteKit / Astro 用它标记「要暴露给浏览器」的变量），存的时候会报
+> `Environment variables with a public framework prefix cannot use visibility: secret`。
+> 这个值只在服务端读，本来也不该用公开前缀。代码里 `PUBLIC_ORIGIN` 作为旧名仍兼容。
 
 ## 部署完怎么验证
 

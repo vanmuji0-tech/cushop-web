@@ -26,7 +26,7 @@ export default async function proxy(req: NextRequest) {
     // 详见 netlify-proxy/）。反代会把 Host 改写成 cushop-web.vercel.app，用 nextUrl
     // 拼出的绝对地址指向被墙的域名——未登录用户被弹过去就直接撞墙，永远登不进来。
     //
-    // 优先级：PUBLIC_ORIGIN（手动兜底，见下）> x-forwarded-host（反代注入的原始域名）
+    // 优先级：SITE_ORIGIN（手动兜底，见下）> x-forwarded-host（反代注入的原始域名）
     //        > host（直连）> nextUrl.host
     //
     // 注：这里不能用相对 Location——Next 16 的 proxy 会把它当绝对 URL 解析并抛
@@ -36,9 +36,14 @@ export default async function proxy(req: NextRequest) {
     const host = forwardedHost || req.headers.get('host') || req.nextUrl.host
     const proto = forwardedProto || req.nextUrl.protocol.replace(':', '')
 
-    // 如果反代没按约定注入 x-forwarded-host，在 Vercel 环境变量里设 PUBLIC_ORIGIN
+    // 如果反代没按约定注入 x-forwarded-host，在 Vercel 环境变量里设 SITE_ORIGIN
     // （例如 https://cushop.netlify.app）即可确定性覆盖，不用再猜。
-    const origin = process.env.PUBLIC_ORIGIN || `${proto}://${host}`
+    //
+    // 不叫 PUBLIC_ORIGIN：Vercel 把 PUBLIC_ 当作框架公开前缀（SvelteKit / Astro
+    // 用它标记「要暴露给浏览器」的变量），会拒绝存成 secret。这个值只在服务端读，
+    // 本来也不该带公开前缀。PUBLIC_ORIGIN 作为旧名保留兼容。
+    const origin =
+      process.env.SITE_ORIGIN || process.env.PUBLIC_ORIGIN || `${proto}://${host}`
 
     const login = new URL('/login', origin)
     login.searchParams.set('next', path)
