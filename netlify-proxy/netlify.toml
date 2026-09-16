@@ -1,0 +1,22 @@
+# CUshop 国内访问反代
+#
+# 背景：cushop-web.vercel.app 在中国大陆被 DNS 污染（解析到 Twitter/Facebook 的
+# IP）+ SNI 阻断（TLS 握手带 vercel.app 就 RST），手机直连打不开。而 *.netlify.app
+# 实测国内可达，Vercel 的服务器 IP 76.76.21.21 本身也是通的（只有域名被封）。
+#
+# 所以：用户访问 xxx.netlify.app，Netlify 在服务端去 Vercel 取内容再回给用户。
+# 浏览器全程只跟 netlify.app 打交道，不碰 vercel.app。Vercel 那边不需要任何改动。
+
+[build]
+  publish = "."
+
+# status = 200 表示「反向代理」而不是「跳转」：
+# 浏览器地址栏保持 xxx.netlify.app 不变，也不会把 Vercel 域名暴露给用户。
+# force = true 保证这条规则优先于静态文件匹配。
+#
+# /*  会连 /、/goods/xxx、/api/*、/_next/* 一起转发，一个都不能漏。
+[[redirects]]
+  from = "/*"
+  to = "https://cushop-web.vercel.app/:splat"
+  status = 200
+  force = true
